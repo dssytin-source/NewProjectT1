@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 public class Main {
 
@@ -9,7 +11,7 @@ public class Main {
 
     public static String checkAccess(int age){
         String result;
-        if (age < 18){
+        if (age > 18){
             result = "Allowed";
         }
         else {
@@ -127,6 +129,19 @@ if ("Bug".equals(message)){
                 }
             }
             return result;
+        }
+
+        public static int[] randomScore(){
+            Random random = new Random();
+        return IntStream.generate(() -> random.nextInt(101))
+                .limit(5)
+                .toArray();
+        }
+    public static int[] randomNumber(){
+            Random random = new Random();
+        return IntStream.generate(() -> random.nextInt(-101, 101))
+                .limit(10)
+                .toArray();
         }
     }
 

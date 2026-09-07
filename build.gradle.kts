@@ -16,4 +16,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        showStandardStreams = true
+    }
+        finalizedBy ("finishTests")
+}
+tasks.register("finishTests") {
+    doLast {
+        println ("Test run is over")
+    }
 }
