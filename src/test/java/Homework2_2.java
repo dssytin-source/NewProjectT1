@@ -57,7 +57,7 @@ public class Homework2_2 {
     @ParameterizedTest
     @MethodSource("Main#randomNumber")
     void isPositiveRandomTest(int number) {
-        boolean expected = number > 0;
+        boolean expected = number >= 0;
         boolean actual = Main.isPositive(number);
         if (actual == expected) {
             System.out.println("TEST PASSED");
@@ -83,9 +83,9 @@ public class Homework2_2 {
         int randomBlast = random.nextInt(3, 6); // даст 3, 4 или 5
         String actual = Main.blastOff(randomBlast);
         String expected = switch (randomBlast) {
-            case 3 -> "3 2 1 Blastoff!";
-            case 4 -> "4 3 2 1 Blastoff!";
-            default -> "5 4 3 2 1 Blastoff!";
+            case 3 -> "3 2 1 Поехали";
+            case 4 -> "4 3 2 1 Поехали";
+            default -> "5 4 3 2 1 Поехали";
         };
 
         if (Objects.equals(actual, expected)) {
