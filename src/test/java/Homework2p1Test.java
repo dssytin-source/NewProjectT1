@@ -7,7 +7,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Random;
 
-public class Homework2_1 {
+public class Homework2p1Test {
 
     private static final Random random = new Random();
 

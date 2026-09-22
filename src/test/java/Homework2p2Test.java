@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Homework2_2 {
+public class Homework2p2Test {
 
     private static final Random random = new Random();
 

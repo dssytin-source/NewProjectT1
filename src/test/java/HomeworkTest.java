@@ -2,7 +2,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.List;
 
-public class Homework {
+public class HomeworkTest {
     @Test
     void runTest(){
         System.out.println(Main.isEven(4));
