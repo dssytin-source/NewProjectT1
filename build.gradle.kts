@@ -19,9 +19,11 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.junit.jupiter:junit-jupiter-params")
+    testImplementation("org.seleniumhq.selenium:selenium-java:4.19.1")
     implementation("io.rest-assured:rest-assured:5.4.0")
     implementation("org.assertj:assertj-core:3.25.3")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
+    testImplementation("com.codeborne:selenide:7.2.3")
 }
 
 tasks.test {
