@@ -11,6 +11,9 @@ import pages.assertions.AdminAssert;
 import pages.assertions.CartAssert;
 import pages.assertions.MainAssert;
 import static com.codeborne.selenide.Selenide.closeWebDriver;
+import com.codeborne.selenide.logevents.SelenideLogger;
+import io.qameta.allure.selenide.AllureSelenide;
+import org.junit.jupiter.api.BeforeAll;
 
 public class Homework9WebinarTest {
 
@@ -22,6 +25,13 @@ public class Homework9WebinarTest {
     private final CartAssert cartAssert = new CartAssert(cartPage);
     private final AdminAssert adminAssert = new AdminAssert(adminPage);
     private final MainAssert mainAssert = new MainAssert(mainPage);
+
+    @BeforeAll
+    public static void setUpAllureListener() {
+        SelenideLogger.addListener("AllureSelenide", new AllureSelenide()
+                .screenshots(true)
+                .savePageSource(true));
+    }
 
     @BeforeEach
     public void setUp() {

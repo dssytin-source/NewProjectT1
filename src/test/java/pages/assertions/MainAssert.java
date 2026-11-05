@@ -1,6 +1,8 @@
 package pages.assertions;
 
+import io.qameta.allure.Step;
 import pages.MainPage;
+
 import static com.codeborne.selenide.Condition.text;
 import static com.codeborne.selenide.Condition.visible;
 
@@ -12,6 +14,7 @@ public class MainAssert {
         this.mainPage = mainPage;
     }
 
+    @Step("Проверить, что товар '{productName}' с ценой {productPrice} руб. отображается на витрине магазина")
     public MainAssert verifyProductVisible(String productName, int productPrice) {
         var card = mainPage.getProductCards()
                 .findBy(text(productName))

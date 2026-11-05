@@ -1,7 +1,10 @@
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.qameta.allure.Step;
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -58,30 +61,71 @@ public class Homework4WebinarTest {
                 .setBaseUri("http://localhost:8080")
                 .setContentType(ContentType.JSON)
                 .setAuth(RestAssured.basic("admin", "secret123"))
+                .addFilter(new AllureRestAssured())
                 .build();
     }
 
+    //Методы обращения к эндпоинтам с @Step
+
+    @Step("POST /goods/add — Создание товара '{body.name}' с ценой {body.price}")
+    private Response sendPostAddProduct(ProductRequest body) {
+        return given().spec(requestSpec).body(body).when().post("/goods/add");
+    }
+
+    @Step("GET /goods/{id} — Получение информации о товаре по id={id}")
+    private Response sendGetProductById(Object id) {
+        return given().spec(requestSpec).when().get("/goods/{id}", id);
+    }
+
+    @Step("PATCH /goods/{id} — Частичное обновление товара id={id}")
+    private Response sendPatchProduct(Object id, ProductRequest body) {
+        return given().spec(requestSpec).body(body).when().patch("/goods/{id}", id);
+    }
+
+    @Step("DELETE /goods/{id} — Удаление товара id={id}")
+    private Response sendDeleteProduct(Object id) {
+        return given().spec(requestSpec).when().delete("/goods/{id}", id);
+    }
+
+    @Step("GET /goods/list — Получение списка товаров (страница={page}, размер={size})")
+    private Response sendGetGoodsList(int page, int size) {
+        return given().spec(requestSpec).queryParam("page", page).queryParam("size", size).when().get("/goods/list");
+    }
+
+    //API-проверки с @Step
+
+    @Step("Проверка статус-кода ответа: ожидается {expectedStatus}")
+    private void verifyStatusCode(Response response, int expectedStatus) {
+        response.then().statusCode(expectedStatus);
+    }
+
+    @Step("Проверка наличия данных в ответе (data != null)")
+    private void verifyResponseHasData(Response response) {
+        response.then().body("data", notNullValue());
+    }
+
+    @Step("Проверка поля 'price' в ответе: ожидается {expectedPrice}")
+    private void verifyProductPrice(Response response, float expectedPrice) {
+        response.then().body("price", is(expectedPrice));
+    }
+
+    @Step("Проверка соответствия ID товара ({expectedId}) и цены ({expectedPrice}) в объекте ответа")
+    private void verifyProductResponseFields(ProductResponse actual, Long expectedId, Double expectedPrice) {
+        assertThat(actual.getId()).as("ID товара").isEqualTo(expectedId);
+        assertThat(actual.getPrice()).as("Цена товара").isEqualTo(expectedPrice);
+    }
+
+    @Step("Вспомогательный шаг: создание товара '{namePrefix}' для подготовки данных")
     private Long createProduct(String namePrefix, Double price) {
         String uniqueName = namePrefix + "_" + System.nanoTime();
         ProductRequest product = new ProductRequest(uniqueName, price);
 
-        Object idObj = given()
-                .spec(requestSpec)
-                .body(product)
-                .when()
-                .post("/goods/add")
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("data.id");
+        Response response = sendPostAddProduct(product);
+        verifyStatusCode(response, 200);
 
+        Object idObj = response.path("data.id");
         if (idObj == null) {
-            idObj = given()
-                    .spec(requestSpec)
-                    .queryParam("page", 0)
-                    .queryParam("size", 100)
-                    .when()
-                    .get("/goods/list")
+            idObj = sendGetGoodsList(0, 100)
                     .then()
                     .statusCode(200)
                     .extract()
@@ -98,14 +142,9 @@ public class Homework4WebinarTest {
         String uniqueName = "Product_" + System.nanoTime();
         ProductRequest body = new ProductRequest(uniqueName, 599.0);
 
-        given()
-                .spec(requestSpec)
-                .body(body)
-                .when()
-                .post("/goods/add")
-                .then()
-                .statusCode(200)
-                .body("data", notNullValue());
+        Response response = sendPostAddProduct(body);
+        verifyStatusCode(response, 200);
+        verifyResponseHasData(response);
     }
 
     @Test
@@ -113,13 +152,8 @@ public class Homework4WebinarTest {
     void testAddProduct400() {
         ProductRequest invalidBody = new ProductRequest("NegativeItem_" + System.nanoTime(), -15.0);
 
-        given()
-                .spec(requestSpec)
-                .body(invalidBody)
-                .when()
-                .post("/goods/add")
-                .then()
-                .statusCode(400);
+        Response response = sendPostAddProduct(invalidBody);
+        verifyStatusCode(response, 400);
     }
 
     @Test
@@ -127,37 +161,23 @@ public class Homework4WebinarTest {
     void testGetProductById200() {
         Long productId = createProduct("GetItem", 1450.0);
 
-        ProductResponse response = given()
-                .spec(requestSpec)
-                .when()
-                .get("/goods/{id}", productId)
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(productId.intValue()))
-                .extract()
-                .as(ProductResponse.class);
+        Response response = sendGetProductById(productId);
+        verifyStatusCode(response, 200);
 
-        assertThat(response.getId()).isEqualTo(productId);
-        assertThat(response.getPrice()).isEqualTo(1450.0);
+        ProductResponse product = response.as(ProductResponse.class);
+        verifyProductResponseFields(product, productId, 1450.0);
     }
 
     @Test
     @DisplayName("GET /goods/{id} -> 404 Not Found: несуществующий ID")
     void testGetProductById404() {
         Long deletedId = createProduct("TempFor404", 100.0);
-        given()
-                .spec(requestSpec)
-                .when()
-                .delete("/goods/{id}", deletedId)
-                .then()
-                .statusCode(200);
 
-        given()
-                .spec(requestSpec)
-                .when()
-                .get("/goods/{id}", deletedId)
-                .then()
-                .statusCode(404);
+        Response delResp = sendDeleteProduct(deletedId);
+        verifyStatusCode(delResp, 200);
+
+        Response getResp = sendGetProductById(deletedId);
+        verifyStatusCode(getResp, 404);
     }
 
     @Test
@@ -167,14 +187,9 @@ public class Homework4WebinarTest {
         String updatedName = "PatchUpdated_" + System.nanoTime();
         ProductRequest updateBody = new ProductRequest(updatedName, 1999.0);
 
-        given()
-                .spec(requestSpec)
-                .body(updateBody)
-                .when()
-                .patch("/goods/{id}", productId)
-                .then()
-                .statusCode(200)
-                .body("price", is(1999.0f));
+        Response response = sendPatchProduct(productId, updateBody);
+        verifyStatusCode(response, 200);
+        verifyProductPrice(response, 1999.0f);
     }
 
     @Test
@@ -183,13 +198,8 @@ public class Homework4WebinarTest {
         Long productId = createProduct("PatchBad", 1000.0);
         ProductRequest invalidUpdate = new ProductRequest("PatchBadUpdated_" + System.nanoTime(), -1.0);
 
-        given()
-                .spec(requestSpec)
-                .body(invalidUpdate)
-                .when()
-                .patch("/goods/{id}", productId)
-                .then()
-                .statusCode(400);
+        Response response = sendPatchProduct(productId, invalidUpdate);
+        verifyStatusCode(response, 400);
     }
 
     @Test
@@ -198,13 +208,8 @@ public class Homework4WebinarTest {
         int nonExistentId = 99999;
         ProductRequest validBody = new ProductRequest("GhostItem_" + System.nanoTime(), 500.0);
 
-        given()
-                .spec(requestSpec)
-                .body(validBody)
-                .when()
-                .patch("/goods/{id}", nonExistentId)
-                .then()
-                .statusCode(404);
+        Response response = sendPatchProduct(nonExistentId, validBody);
+        verifyStatusCode(response, 404);
     }
 
     @Test
@@ -212,19 +217,11 @@ public class Homework4WebinarTest {
     void testDeleteProduct200() {
         Long productId = createProduct("DeleteItem", 300.0);
 
-        given()
-                .spec(requestSpec)
-                .when()
-                .delete("/goods/{id}", productId)
-                .then()
-                .statusCode(200);
+        Response delResp = sendDeleteProduct(productId);
+        verifyStatusCode(delResp, 200);
 
-        given()
-                .spec(requestSpec)
-                .when()
-                .get("/goods/{id}", productId)
-                .then()
-                .statusCode(404);
+        Response getResp = sendGetProductById(productId);
+        verifyStatusCode(getResp, 404);
     }
 
     @Test
@@ -232,25 +229,15 @@ public class Homework4WebinarTest {
     void testDeleteProduct404() {
         int nonExistentId = 99999;
 
-        given()
-                .spec(requestSpec)
-                .when()
-                .delete("/goods/{id}", nonExistentId)
-                .then()
-                .statusCode(404);
+        Response response = sendDeleteProduct(nonExistentId);
+        verifyStatusCode(response, 404);
     }
 
     @Test
     @DisplayName("GET /goods/list -> 200 OK: получение списка товаров с пагинацией")
     void testGetGoodsList200() {
-        given()
-                .spec(requestSpec)
-                .queryParam("page", 0)
-                .queryParam("size", 10)
-                .when()
-                .get("/goods/list")
-                .then()
-                .statusCode(200)
-                .body("goods", notNullValue());
+        Response response = sendGetGoodsList(0, 10);
+        verifyStatusCode(response, 200);
+        response.then().body("goods", notNullValue());
     }
 }

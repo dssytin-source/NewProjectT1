@@ -1,5 +1,6 @@
 plugins {
-    id("java")
+    java
+    id("io.qameta.allure") version "2.11.2"
 }
 
 java {
@@ -24,6 +25,9 @@ dependencies {
     implementation("org.assertj:assertj-core:3.25.3")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
     testImplementation("com.codeborne:selenide:7.2.3")
+    testImplementation("io.qameta.allure:allure-junit5:2.27.0")
+    testImplementation("io.qameta.allure:allure-selenide:2.27.0")
+    testImplementation("io.qameta.allure:allure-rest-assured:2.27.0")
 }
 
 tasks.test {
@@ -72,5 +76,16 @@ tasks.register<Test>("apiTest") {
     }
     testLogging {
         events("passed", "skipped", "failed")
+    }
+}
+
+allure {
+    version.set("2.27.0")
+    adapter {
+        frameworks {
+            junit5 {
+                adapterVersion.set("2.27.0")
+            }
+        }
     }
 }
