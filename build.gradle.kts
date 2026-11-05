@@ -1,91 +1,37 @@
 plugins {
     java
-    id("io.qameta.allure") version "2.11.2"
+    id("io.qameta.allure") version "2.11.2" apply false
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+allprojects {
+    group = "org.example"
+    version = "1.0-SNAPSHOT"
+
+    repositories {
+        mavenCentral()
     }
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+subprojects {
+    apply(plugin = "java")
 
-repositories {
-    mavenCentral()
-}
+    extensions.configure<JavaPluginExtension> {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    }
 
-dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.junit.jupiter:junit-jupiter-params")
-    testImplementation("org.seleniumhq.selenium:selenium-java:4.19.1")
-    implementation("io.rest-assured:rest-assured:5.4.0")
-    implementation("org.assertj:assertj-core:3.25.3")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
-    testImplementation("com.codeborne:selenide:7.2.3")
-    testImplementation("io.qameta.allure:allure-junit5:2.27.0")
-    testImplementation("io.qameta.allure:allure-selenide:2.27.0")
-    testImplementation("io.qameta.allure:allure-rest-assured:2.27.0")
-}
+    dependencies {
+        add("testImplementation", platform("org.junit:junit-bom:5.10.0"))
+        add("testImplementation", "org.junit.jupiter:junit-jupiter")
+        add("testImplementation", "org.junit.jupiter:junit-jupiter-params")
+        add("testImplementation", "org.assertj:assertj-core:3.25.3")
+    }
 
-tasks.test {
-    useJUnitPlatform()
-    testLogging {
-        showStandardStreams = true
-    }
-    finalizedBy("finishTests")
-}
-
-tasks.register<Test>("webinarTest") {
-    description = "Runs webinar tests with tag 'webinar'"
-    group = "verification"
-    useJUnitPlatform {
-        includeTags("homeworkWebinar")
-    }
-    testLogging {
-        showStandardStreams = true
-    }
-    finalizedBy("finishTests")
-}
-
-tasks.register<Test>("lectureTest") {
-    description = "Runs lecture tests with tag 'lecture'"
-    group = "verification"
-    useJUnitPlatform {
-        includeTags("homeworkLecture")
-    }
-    testLogging {
-        showStandardStreams = true
-    }
-    finalizedBy("finishTests")
-}
-
-tasks.register("finishTests") {
-    doLast {
-        println("Test run is over")
-    }
-}
-
-tasks.register<Test>("apiTest") {
-    description = "Запуск API-автотестов"
-    group = "verification"
-    useJUnitPlatform {
-        includeTags("api")
-    }
-    testLogging {
-        events("passed", "skipped", "failed")
-    }
-}
-
-allure {
-    version.set("2.27.0")
-    adapter {
-        frameworks {
-            junit5 {
-                adapterVersion.set("2.27.0")
-            }
+    tasks.withType<Test> {
+        useJUnitPlatform()
+        testLogging {
+            showStandardStreams = true
         }
     }
 }
